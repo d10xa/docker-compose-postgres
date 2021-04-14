@@ -4,6 +4,10 @@ from subprocess import call, list2cmdline
 
 import yaml
 import argparse
+import os
+import re
+
+REGEX_ENV_WITH_DEFAULT = re.compile(r'\${(.+):-(.+)}')
 
 
 def run_postgres(
@@ -58,6 +62,9 @@ def extract_environment(yml, service_name):
             'service `{}` is not defined in docker-compose file'.format(
                 service_name))
     environment = service.get('environment', None)
+    if environment:
+        environment = \
+            dict([(k, resolve_env(v)) for (k, v) in environment.items()])
     if not environment:
         env_file = service.get('env_file')
         if isinstance(env_file, list):
@@ -70,6 +77,13 @@ def extract_environment(yml, service_name):
         else:
             raise ValueError('env_file bad format ' + str(env_file))
     return environment
+
+
+def resolve_env(value):
+    m = REGEX_ENV_WITH_DEFAULT.match(value)
+    if m:
+        value = os.environ.get(m[1]) or m[2]
+    return value
 
 
 def removeprefix(s, prefix):
