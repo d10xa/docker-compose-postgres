@@ -46,7 +46,7 @@ def run_postgres(
 def find_postgres_service(yml):
     for (k, v) in yml.get('services', {}).items():
         img = v.get('image')
-        if img.startswith('postgres:'):
+        if img.startswith('postgres:') or img == 'postgres':
             return k
     return None
 
